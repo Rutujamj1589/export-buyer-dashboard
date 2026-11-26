@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExportAI — Automated Buyer Discovery & Outreach Dashboard</title>
+  <style>
+    :root { --bg: #f4f6f9; --card: #ffffff; --primary: #2563eb; --text: #1e293b; --muted: #64748b; --border: #e2e8f0; --success: #16a34a; --danger: #dc2626; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; }
+    header { background: #0f172a; color: #fff; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    header h1 { font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    header span.badge { background: var(--primary); font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 99px; }
+    .container { max-width: 1200px; margin: 1.5rem auto; padding: 0 1rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card { background: var(--card); padding: 1.2rem; border-radius: 10px; border: 1px solid var(--border); }
+    .stat-card p { font-size: 0.85rem; color: var(--muted); }
+    .stat-card h2 { font-size: 1.75rem; margin-top: 0.25rem; }
+    .panel { background: var(--card); padding: 1.5rem; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+    .panel-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
+    input, select, textarea { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: #fff; }
+    button { padding: 0.6rem 1rem; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
+    .btn-success { background: var(--success); color: #fff; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; color: var(--muted); font-weight: 600; }
+    .pill { padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+    .pill-b2b { background: #dbeafe; color: #1e40af; }
+    .pill-b2c { background: #fef3c7; color: #92400e; }
+    .pill-valid { background: #dcfce7; color: #166534; }
+    .pill-invalid { background: #fee2e2; color: #991b1b; }
+    .pill-sent { background: #e0e7ff; color: #3730a3; }
+    #toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.9rem; display: none; z-index: 999; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); display: none; align-items: center; justify-content: center; padding: 1rem; z-index: 50; }
+    .modal { background: #fff; max-width: 500px; width: 100%; border-radius: 10px; padding: 1.5rem; }
+    .modal label { display: block; font-size: 0.85rem; font-weight: 600; margin: 0.6rem 0 0.25rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>ExportAI Buyer Discovery <span class="badge">API + Manual Export</span></h1>
+  <div style="font-size: 0.85rem; color: #cbd5e1;">India &rarr; Global B2B Trade Intelligence</div>
+</header>
+<div class="container">
+  <div class="stats-grid">
+    <div class="stat-card"><p>Total Extracted Leads</p><h2 id="statTotal">0</h2></div>
+    <div class="stat-card"><p>Validated Emails</p><h2 id="statValid" style="color: var(--success);">0</h2></div>
+    <div class="stat-card"><p>Gemini AI: B2B Buyers</p><h2 id="statB2B" style="color: var(--primary);">0</h2></div>
+    <div class="stat-card"><p>Outreach Emails Sent</p><h2 id="statSent">0</h2></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">
+      <span>Module 1: Multi-Source Buyer Discovery & Extraction</span>
+      <span style="font-size: 0.8rem; color: var(--muted);">Auto-deduplication & Email Validation Active</span>
+    </div>
+    <div class="form-grid">
+      <input type="text" id="productInput" placeholder="Product (e.g., Singing Bowls)" value="Singing Bowls" />
+      <select id="countryInput">
+        <option value="USA">United States (USA)</option>
+        <option value="UK">United Kingdom (UK)</option>
+        <option value="Germany">Germany</option>
+        <option value="UAE">UAE</option>
+      </select>
+      <input type="text" id="locationInput" placeholder="State / City (e.g., Houston, Texas)" value="Houston, Texas" />
+      <select id="sourceInput">
+        <option value="Google Maps API">Google Search & Maps</option>
+        <option value="LinkedIn API">LinkedIn Buyer Search</option>
+        <option value="ImportYeti Data">ImportYeti Shipment Records</option>
+        <option value="Business Directory">Thomasnet / Yellow Pages</option>
+      </select>
+      <button type="button" class="btn-primary" id="fetchBtn">Fetch API Buyers</button>
+    </div>
+    <details style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+      <summary style="cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--primary);">+ Add Manual Buyer Lead (LinkedIn / Cold Call Trick)</summary>
+      <div class="form-grid" style="margin-top: 0.75rem;">
+        <input type="text" id="mCompany" placeholder="Company / Showroom Name" />
+        <input type="text" id="mContact" placeholder="Buyer / Manager Name" />
+        <input type="email" id="mEmail" placeholder="Email Address" />
+        <input type="text" id="mPhone" placeholder="Phone Number" />
+        <select id="mType">
+          <option value="B2B">B2B (Wholesaler/Showroom)</option>
+          <option value="B2C">B2C (Individual Buyer)</option>
+        </select>
+        <button type="button" class="btn-success" id="manualSaveBtn">Save to Database</button>
+      </div>
+    </details>
+  </div>
+  <div class="panel">
+    <div class="toolbar">
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <select id="filterType" style="width: auto;">
+          <option value="ALL">All Classifications (AI)</option>
+          <option value="B2B">B2B Business Buyers Only</option>
+          <option value="B2C">B2C Individuals Only</option>
+        </select>
+        <select id="filterEmail" style="width: auto;">
+          <option value="ALL">All Email Statuses</option>
+          <option value="VALID">Valid Emails Only</option>
+          <option value="INVALID">Invalid / Filtered Out</option>
+        </select>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <button type="button" class="btn-outline" id="purgeBtn">Purge Invalid Emails</button>
+        <button type="button" class="btn-primary" id="exportBtn">Export CSV / Excel</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Company / Showroom</th>
+            <th>Contact Person</th>
+            <th>Email & Validation</th>
+            <th>Phone</th>
+            <th>Source & Location</th>
+            <th>AI Class</th>
+            <th>Outreach Action</th>
+          </tr>
+        </thead>
+        <tbody id="buyerTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="emailModal">
+  <div class="modal">
+    <h3>Gmail Outreach Sender Module</h3>
+    <p style="font-size: 0.82rem; color: var(--muted);">Anti-spam duplicate protection enabled. Attaches product catalog PDF.</p>
+    <label>To (Validated Buyer Email):</label>
+    <input type="text" id="modalTo" readonly style="background: #f8fafc;" />
+    <label>Subject Line:</label>
+    <input type="text" id="modalSubject" />
+    <label>Personalized Message:</label>
+    <textarea id="modalBody" rows="4"></textarea>
+    <label>Attachment (Product Presentation PDF):</label>
+    <input type="text" value="India_Export_Product_Catalog_2026.pdf (Attached)" readonly style="background: #f0fdf4; color: #166534; font-size: 0.82rem;" />
+    <div class="modal-actions">
+      <button type="button" class="btn-outline" id="cancelModalBtn">Cancel</button>
+      <button type="button" class="btn-primary" id="sendEmailBtn">Send Outreach Email</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
